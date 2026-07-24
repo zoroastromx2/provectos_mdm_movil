@@ -64,11 +64,37 @@ There are zero automated tests, no CI pipeline, no `.clang-format`, no pre-commi
 - **OGR geometry mapping** (`ogrGeomToQgis()` in `qgisprojectgenerator.cpp`) collapses Multi* types to their single-type equivalents (e.g., MultiPolygon → Polygon).
 - Layer IDs are `<name>_<16 random hex chars>` — not stable across runs.
 - **Success signals differ:** `GeoManager` emits `operationSucceeded()`; `QgisProjectGenerator` emits `generationSucceeded(outputPath)`. Handled by two separate `Connections` blocks in `main.qml`.
-- All GDAL operations run **synchronously on the UI thread**; long operations will freeze the UI. The `busy` property signals blocking but does not run anything async.
+- **GDAL operations are now asynchronous (v0.2.0+):** `createGeoPackage()`, `openGeoPackage()`, `addLayers()`, `removeLayer()` execute in a background thread via `QtConcurrent::run()`. Methods return immediately; results arrive via `operationSucceeded()` signal or `lastError` property. The `busy` property changes to `true` at start, `false` when complete. UI remains fully responsive during GDAL operations. See `ASYNC_THREADING_MIGRATION.md` for details.
 
 ## vcpkg / DLL deployment
 
 vcpkg installs dependencies into `vcpkg_installed/` (git-ignored). Do not manually add DLLs. A post-build step copies vcpkg runtime DLLs and runs `windeployqt --qmldir qml --no-translations` automatically.
+
+## Threading Model (v0.2.0+)
+
+**GDAL operations are asynchronous** — they run in a background thread pool and do not block the UI.
+
+| Operation | Behavior | Thread |
+|-----------|----------|--------|
+| `createGeoPackage()` | Queues operation, returns immediately | Worker thread (GDAL), completion handler on UI thread |
+| `openGeoPackage()` | Queues operation, returns immediately | Worker thread (GDAL), completion handler on UI thread |
+| `addLayers()` | Queues operation, returns immediately | Worker thread (GDAL), completion handler on UI thread |
+| `removeLayer()` | Queues operation, returns immediately | Worker thread (GDAL), completion handler on UI thread |
+| `getGpkgFileInfo()` | Synchronous (small operation) | UI thread |
+| `getAllLayerInfo()` | Synchronous (small operation) | UI thread |
+
+**For QML developers:**
+- Set `enabled: !geoMgr.busy` on buttons to prevent concurrent operations
+- Listen to `operationSucceeded()` signal for completion notification
+- Monitor `busy` property to show/hide loading indicators
+- Check `lastError` property if operation fails
+
+**Implementation details:**
+- Uses `QtConcurrent::run()` with `QFutureWatcher<T>` for monitoring
+- Each operation has a result struct (e.g., `CreateGpkgResult`)
+- Handlers (`onCreateGeoPackageFinished()`, etc.) process results on UI thread
+- Destructor waits for pending operations to finish cleanly
+- See `QUICK_REFERENCE.md`, `ASYNC_THREADING_MIGRATION.md` for patterns
 
 ## Misc
 

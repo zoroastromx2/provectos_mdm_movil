@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QFutureWatcher>
 #include <QtQml/qqmlregistration.h>
 
 /**
@@ -116,8 +117,55 @@ private:
     void setLastError(const QString &error);
     void setBusy(bool busy);
 
+    // Worker methods (executed in background thread)
+    struct CreateGpkgResult {
+        bool success;
+        QString errorMsg;
+        QString gpkgPath;
+        QStringList layerNames;
+    };
+
+    CreateGpkgResult createGeoPackageWorker(const QStringList &shpPaths,
+                                           const QString     &gpkgPath);
+
+    struct OpenGpkgResult {
+        bool success;
+        QString errorMsg;
+        QString gpkgPath;
+        QStringList layerNames;
+    };
+
+    OpenGpkgResult openGeoPackageWorker(const QString &gpkgPath);
+
+    struct AddLayersResult {
+        bool success;
+        QString errorMsg;
+        QStringList layerNames;
+    };
+
+    AddLayersResult addLayersWorker(const QStringList &shpPaths);
+
+    struct RemoveLayerResult {
+        bool success;
+        QString errorMsg;
+        QStringList layerNames;
+    };
+
+    RemoveLayerResult removeLayerWorker(const QString &layerName);
+
+    // Slot handlers for worker completion
+    void onCreateGeoPackageFinished();
+    void onOpenGeoPackageFinished();
+    void onAddLayersFinished();
+    void onRemoveLayerFinished();
+
     QString     m_activeGpkgPath;
     QStringList m_layerNames;
     QString     m_lastError;
     bool        m_busy{false};
+
+    QFutureWatcher<CreateGpkgResult> *m_createGpkgWatcher{nullptr};
+    QFutureWatcher<OpenGpkgResult>   *m_openGpkgWatcher{nullptr};
+    QFutureWatcher<AddLayersResult>  *m_addLayersWatcher{nullptr};
+    QFutureWatcher<RemoveLayerResult> *m_removeLayerWatcher{nullptr};
 };

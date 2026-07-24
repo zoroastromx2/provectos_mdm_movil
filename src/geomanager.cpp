@@ -6,6 +6,7 @@
 #include <QUrl>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QtConcurrent>
 
 // GDAL / OGR headers
 #include <gdal.h>
@@ -47,7 +48,26 @@ GeoManager::GeoManager(QObject *parent)
     GDALAllRegister();
 }
 
-GeoManager::~GeoManager() = default;
+GeoManager::~GeoManager()
+{
+    // Clean up any remaining watchers
+    if (m_createGpkgWatcher) {
+        m_createGpkgWatcher->waitForFinished();
+        delete m_createGpkgWatcher;
+    }
+    if (m_openGpkgWatcher) {
+        m_openGpkgWatcher->waitForFinished();
+        delete m_openGpkgWatcher;
+    }
+    if (m_addLayersWatcher) {
+        m_addLayersWatcher->waitForFinished();
+        delete m_addLayersWatcher;
+    }
+    if (m_removeLayerWatcher) {
+        m_removeLayerWatcher->waitForFinished();
+        delete m_removeLayerWatcher;
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Property accessors
@@ -228,7 +248,7 @@ QVariantList GeoManager::getAllLayerInfo()
 }
 
 // ---------------------------------------------------------------------------
-// Public API
+// Public API (async versions using QtConcurrent)
 // ---------------------------------------------------------------------------
 
 bool GeoManager::createGeoPackage(const QStringList &shpPaths,
@@ -246,71 +266,25 @@ bool GeoManager::createGeoPackage(const QStringList &shpPaths,
     setBusy(true);
     setLastError(QString{});
 
-    // Get (or create) the GPKG driver
-    GDALDriver *gpkgDriver =
-        GetGDALDriverManager()->GetDriverByName("GPKG");
-    if (!gpkgDriver) {
-        setLastError(tr("El controlador GPKG no está disponible. Checa la instalación del GDAL."));
-        setBusy(false);
-        return false;
+    // Clean up any previous watcher
+    if (m_createGpkgWatcher) {
+        m_createGpkgWatcher->waitForFinished();
+        delete m_createGpkgWatcher;
     }
 
-    // Create the new (empty) GeoPackage – truncating any existing file
-    GdalDatasetGuard outDS{gpkgDriver->Create(
-        gpkgPath.toUtf8().constData(), 0, 0, 0, GDT_Unknown, nullptr)};
+    // Create a new watcher and connect it
+    m_createGpkgWatcher = new QFutureWatcher<CreateGpkgResult>(this);
+    connect(m_createGpkgWatcher, &QFutureWatcher<CreateGpkgResult>::finished,
+            this, &GeoManager::onCreateGeoPackageFinished);
 
-    if (!outDS.isValid()) {
-        setLastError(tr("Falla al crear el GeoPackage: %1").arg(gpkgPath));
-        setBusy(false);
-        return false;
-    }
+    // Launch the worker method in a thread pool
+    QFuture<CreateGpkgResult> future = QtConcurrent::run(
+        [this, shpPaths, gpkgPath]() {
+            return createGeoPackageWorker(shpPaths, gpkgPath);
+        });
 
-    bool anyImported = false;
-    for (const QString &shpPath : shpPaths) {
-        GdalDatasetGuard srcDS{static_cast<GDALDataset *>(
-            GDALOpenEx(shpPath.toUtf8().constData(),
-                       GDAL_OF_VECTOR | GDAL_OF_READONLY,
-                       nullptr, nullptr, nullptr))};
-
-        if (!srcDS.isValid()) {
-            // Non-fatal: report and continue with remaining files
-            setLastError(tr("No se puede abrir el archivo shape: %1 – saltado.").arg(shpPath));
-            continue;
-        }
-
-        const QString layerName = QFileInfo(shpPath).baseName();
-
-        for (int i = 0; i < srcDS.get()->GetLayerCount(); ++i) {
-            OGRLayer *srcLayer = srcDS.get()->GetLayer(i);
-            if (!srcLayer)
-                continue;
-
-            // Use the shapefile's base name as the layer name in the GPKG
-            OGRLayer *newLayer =
-                outDS.get()->CopyLayer(srcLayer,
-                                       layerName.toUtf8().constData(),
-                                       nullptr);
-            if (!newLayer) {
-                setLastError(tr("Failed to copy layer '%1' from '%2'.")
-                                 .arg(layerName, shpPath));
-            } else {
-                anyImported = true;
-            }
-        }
-    }
-
-    if (!anyImported) {
-        setLastError(tr("No fueron importadas capas dentro del GeoPackage."));
-        setBusy(false);
-        return false;
-    }
-
-    setActiveGpkgPath(gpkgPath);
-    reloadLayerNames();
-    setBusy(false);
-
-    emit operationSucceeded(tr("GeoPackage creado: %1").arg(gpkgPath));
-    return true;
+    m_createGpkgWatcher->setFuture(future);
+    return true; // Always return true; result comes via signal
 }
 
 bool GeoManager::openGeoPackage(const QString &gpkgPath)
@@ -322,14 +296,26 @@ bool GeoManager::openGeoPackage(const QString &gpkgPath)
 
     setBusy(true);
     setLastError(QString{});
-    setActiveGpkgPath(gpkgPath);
 
-    const bool ok = reloadLayerNames();
-    setBusy(false);
+    // Clean up any previous watcher
+    if (m_openGpkgWatcher) {
+        m_openGpkgWatcher->waitForFinished();
+        delete m_openGpkgWatcher;
+    }
 
-    if (ok)
-        emit operationSucceeded(tr("Abierto: %1").arg(gpkgPath));
-    return ok;
+    // Create a new watcher and connect it
+    m_openGpkgWatcher = new QFutureWatcher<OpenGpkgResult>(this);
+    connect(m_openGpkgWatcher, &QFutureWatcher<OpenGpkgResult>::finished,
+            this, &GeoManager::onOpenGeoPackageFinished);
+
+    // Launch the worker method in a thread pool
+    QFuture<OpenGpkgResult> future = QtConcurrent::run(
+        [this, gpkgPath]() {
+            return openGeoPackageWorker(gpkgPath);
+        });
+
+    m_openGpkgWatcher->setFuture(future);
+    return true; // Always return true; result comes via signal
 }
 
 bool GeoManager::addLayers(const QStringList &shpPaths)
@@ -346,55 +332,25 @@ bool GeoManager::addLayers(const QStringList &shpPaths)
     setBusy(true);
     setLastError(QString{});
 
-    GdalDatasetGuard outDS{static_cast<GDALDataset *>(
-        GDALOpenEx(m_activeGpkgPath.toUtf8().constData(),
-                   GDAL_OF_VECTOR | GDAL_OF_UPDATE,
-                   nullptr, nullptr, nullptr))};
-
-    if (!outDS.isValid()) {
-        setLastError(tr("No se puede abrir el GeoPackage para edición: %1")
-                         .arg(m_activeGpkgPath));
-        setBusy(false);
-        return false;
+    // Clean up any previous watcher
+    if (m_addLayersWatcher) {
+        m_addLayersWatcher->waitForFinished();
+        delete m_addLayersWatcher;
     }
 
-    bool anyAdded = false;
-    for (const QString &shpPath : shpPaths) {
-        GdalDatasetGuard srcDS{static_cast<GDALDataset *>(
-            GDALOpenEx(shpPath.toUtf8().constData(),
-                       GDAL_OF_VECTOR | GDAL_OF_READONLY,
-                       nullptr, nullptr, nullptr))};
+    // Create a new watcher and connect it
+    m_addLayersWatcher = new QFutureWatcher<AddLayersResult>(this);
+    connect(m_addLayersWatcher, &QFutureWatcher<AddLayersResult>::finished,
+            this, &GeoManager::onAddLayersFinished);
 
-        if (!srcDS.isValid()) {
-            setLastError(tr("No se puede abrir el shape: %1 – brincado.").arg(shpPath));
-            continue;
-        }
+    // Launch the worker method in a thread pool
+    QFuture<AddLayersResult> future = QtConcurrent::run(
+        [this, shpPaths]() {
+            return addLayersWorker(shpPaths);
+        });
 
-        const QString layerName = QFileInfo(shpPath).baseName();
-
-        for (int i = 0; i < srcDS.get()->GetLayerCount(); ++i) {
-            OGRLayer *srcLayer = srcDS.get()->GetLayer(i);
-            if (!srcLayer)
-                continue;
-
-            OGRLayer *newLayer =
-                outDS.get()->CopyLayer(srcLayer,
-                                       layerName.toUtf8().constData(),
-                                       nullptr);
-            if (!newLayer) {
-                setLastError(tr("Hay falla para agregar la capa '%1'.").arg(layerName));
-            } else {
-                anyAdded = true;
-            }
-        }
-    }
-
-    reloadLayerNames();
-    setBusy(false);
-
-    if (anyAdded)
-        emit operationSucceeded(tr("Capas agregadas exitósamente."));
-    return anyAdded;
+    m_addLayersWatcher->setFuture(future);
+    return true; // Always return true; result comes via signal
 }
 
 bool GeoManager::removeLayer(const QString &layerName)
@@ -411,16 +367,225 @@ bool GeoManager::removeLayer(const QString &layerName)
     setBusy(true);
     setLastError(QString{});
 
+    // Clean up any previous watcher
+    if (m_removeLayerWatcher) {
+        m_removeLayerWatcher->waitForFinished();
+        delete m_removeLayerWatcher;
+    }
+
+    // Create a new watcher and connect it
+    m_removeLayerWatcher = new QFutureWatcher<RemoveLayerResult>(this);
+    connect(m_removeLayerWatcher, &QFutureWatcher<RemoveLayerResult>::finished,
+            this, &GeoManager::onRemoveLayerFinished);
+
+    // Launch the worker method in a thread pool
+    QFuture<RemoveLayerResult> future = QtConcurrent::run(
+        [this, layerName]() {
+            return removeLayerWorker(layerName);
+        });
+
+    m_removeLayerWatcher->setFuture(future);
+    return true; // Always return true; result comes via signal
+}
+
+void GeoManager::refreshLayers()
+{
+    // For refresh, we can use the async open method
+    if (!m_activeGpkgPath.isEmpty()) {
+        openGeoPackage(m_activeGpkgPath);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Worker methods (run in background thread)
+// ---------------------------------------------------------------------------
+
+GeoManager::CreateGpkgResult GeoManager::createGeoPackageWorker(
+    const QStringList &shpPaths, const QString &gpkgPath)
+{
+    CreateGpkgResult result;
+    result.gpkgPath = gpkgPath;
+    result.success = false;
+    result.errorMsg.clear();
+
+    // Get (or create) the GPKG driver
+    GDALDriver *gpkgDriver = GetGDALDriverManager()->GetDriverByName("GPKG");
+    if (!gpkgDriver) {
+        result.errorMsg = tr("El controlador GPKG no está disponible. Checa la instalación del GDAL.");
+        return result;
+    }
+
+    // Create the new (empty) GeoPackage – truncating any existing file
+    GdalDatasetGuard outDS{gpkgDriver->Create(
+        gpkgPath.toUtf8().constData(), 0, 0, 0, GDT_Unknown, nullptr)};
+
+    if (!outDS.isValid()) {
+        result.errorMsg = tr("Falla al crear el GeoPackage: %1").arg(gpkgPath);
+        return result;
+    }
+
+    bool anyImported = false;
+    for (const QString &shpPath : shpPaths) {
+        GdalDatasetGuard srcDS{static_cast<GDALDataset *>(
+            GDALOpenEx(shpPath.toUtf8().constData(),
+                       GDAL_OF_VECTOR | GDAL_OF_READONLY,
+                       nullptr, nullptr, nullptr))};
+
+        if (!srcDS.isValid()) {
+            result.errorMsg = tr("No se puede abrir el archivo shape: %1 – saltado.").arg(shpPath);
+            continue;
+        }
+
+        const QString layerName = QFileInfo(shpPath).baseName();
+
+        for (int i = 0; i < srcDS.get()->GetLayerCount(); ++i) {
+            OGRLayer *srcLayer = srcDS.get()->GetLayer(i);
+            if (!srcLayer)
+                continue;
+
+            OGRLayer *newLayer = outDS.get()->CopyLayer(srcLayer,
+                                                        layerName.toUtf8().constData(),
+                                                        nullptr);
+            if (!newLayer) {
+                result.errorMsg = tr("Failed to copy layer '%1' from '%2'.")
+                                 .arg(layerName, shpPath);
+            } else {
+                anyImported = true;
+            }
+        }
+    }
+
+    if (!anyImported) {
+        result.errorMsg = tr("No fueron importadas capas dentro del GeoPackage.");
+        return result;
+    }
+
+    // Read layer names from the newly created GPKG
+    GdalDatasetGuard readDS{static_cast<GDALDataset *>(
+        GDALOpenEx(gpkgPath.toUtf8().constData(),
+                   GDAL_OF_VECTOR | GDAL_OF_READONLY,
+                   nullptr, nullptr, nullptr))};
+    if (readDS.isValid()) {
+        const int count = readDS.get()->GetLayerCount();
+        for (int i = 0; i < count; ++i) {
+            OGRLayer *layer = readDS.get()->GetLayer(i);
+            if (layer)
+                result.layerNames << QString::fromUtf8(layer->GetName());
+        }
+    }
+
+    result.success = true;
+    return result;
+}
+
+GeoManager::OpenGpkgResult GeoManager::openGeoPackageWorker(const QString &gpkgPath)
+{
+    OpenGpkgResult result;
+    result.gpkgPath = gpkgPath;
+    result.success = false;
+    result.errorMsg.clear();
+
+    GdalDatasetGuard ds{static_cast<GDALDataset *>(
+        GDALOpenEx(gpkgPath.toUtf8().constData(),
+                   GDAL_OF_VECTOR | GDAL_OF_READONLY,
+                   nullptr, nullptr, nullptr))};
+
+    if (!ds.isValid()) {
+        result.errorMsg = tr("No se puede abrir el GeoPackage: %1").arg(gpkgPath);
+        return result;
+    }
+
+    const int count = ds.get()->GetLayerCount();
+    for (int i = 0; i < count; ++i) {
+        OGRLayer *layer = ds.get()->GetLayer(i);
+        if (layer)
+            result.layerNames << QString::fromUtf8(layer->GetName());
+    }
+
+    result.success = true;
+    return result;
+}
+
+GeoManager::AddLayersResult GeoManager::addLayersWorker(const QStringList &shpPaths)
+{
+    AddLayersResult result;
+    result.success = false;
+    result.errorMsg.clear();
+
+    GdalDatasetGuard outDS{static_cast<GDALDataset *>(
+        GDALOpenEx(m_activeGpkgPath.toUtf8().constData(),
+                   GDAL_OF_VECTOR | GDAL_OF_UPDATE,
+                   nullptr, nullptr, nullptr))};
+
+    if (!outDS.isValid()) {
+        result.errorMsg = tr("No se puede abrir el GeoPackage para edición: %1")
+                         .arg(m_activeGpkgPath);
+        return result;
+    }
+
+    bool anyAdded = false;
+    for (const QString &shpPath : shpPaths) {
+        GdalDatasetGuard srcDS{static_cast<GDALDataset *>(
+            GDALOpenEx(shpPath.toUtf8().constData(),
+                       GDAL_OF_VECTOR | GDAL_OF_READONLY,
+                       nullptr, nullptr, nullptr))};
+
+        if (!srcDS.isValid()) {
+            result.errorMsg = tr("No se puede abrir el shape: %1 – brincado.").arg(shpPath);
+            continue;
+        }
+
+        const QString layerName = QFileInfo(shpPath).baseName();
+
+        for (int i = 0; i < srcDS.get()->GetLayerCount(); ++i) {
+            OGRLayer *srcLayer = srcDS.get()->GetLayer(i);
+            if (!srcLayer)
+                continue;
+
+            OGRLayer *newLayer = outDS.get()->CopyLayer(srcLayer,
+                                                        layerName.toUtf8().constData(),
+                                                        nullptr);
+            if (!newLayer) {
+                result.errorMsg = tr("Hay falla para agregar la capa '%1'.").arg(layerName);
+            } else {
+                anyAdded = true;
+            }
+        }
+    }
+
+    // Read updated layer names
+    GdalDatasetGuard readDS{static_cast<GDALDataset *>(
+        GDALOpenEx(m_activeGpkgPath.toUtf8().constData(),
+                   GDAL_OF_VECTOR | GDAL_OF_READONLY,
+                   nullptr, nullptr, nullptr))};
+    if (readDS.isValid()) {
+        const int count = readDS.get()->GetLayerCount();
+        for (int i = 0; i < count; ++i) {
+            OGRLayer *layer = readDS.get()->GetLayer(i);
+            if (layer)
+                result.layerNames << QString::fromUtf8(layer->GetName());
+        }
+    }
+
+    result.success = anyAdded;
+    return result;
+}
+
+GeoManager::RemoveLayerResult GeoManager::removeLayerWorker(const QString &layerName)
+{
+    RemoveLayerResult result;
+    result.success = false;
+    result.errorMsg.clear();
+
     GdalDatasetGuard ds{static_cast<GDALDataset *>(
         GDALOpenEx(m_activeGpkgPath.toUtf8().constData(),
                    GDAL_OF_VECTOR | GDAL_OF_UPDATE,
                    nullptr, nullptr, nullptr))};
 
     if (!ds.isValid()) {
-        setLastError(tr("No se puede abrir el GeoPackage para edición: %1")
-                         .arg(m_activeGpkgPath));
-        setBusy(false);
-        return false;
+        result.errorMsg = tr("No se puede abrir el GeoPackage para edición: %1")
+                         .arg(m_activeGpkgPath);
+        return result;
     }
 
     int targetIndex = -1;
@@ -434,29 +599,113 @@ bool GeoManager::removeLayer(const QString &layerName)
     }
 
     if (targetIndex < 0) {
-        setLastError(tr("La capa '%1' no se encuentra en el GeoPackage.").arg(layerName));
-        setBusy(false);
-        return false;
+        result.errorMsg = tr("La capa '%1' no se encuentra en el GeoPackage.").arg(layerName);
+        return result;
     }
 
     const OGRErr err = ds.get()->DeleteLayer(targetIndex);
     if (err != OGRERR_NONE) {
-        setLastError(tr("Fallo al borrar la capa '%1': error en el GDAL %2.")
-                         .arg(layerName).arg(static_cast<int>(err)));
-        setBusy(false);
-        return false;
+        result.errorMsg = tr("Fallo al borrar la capa '%1': error en el GDAL %2.")
+                         .arg(layerName).arg(static_cast<int>(err));
+        return result;
     }
 
-    reloadLayerNames();
-    setBusy(false);
+    // Read updated layer names
+    GdalDatasetGuard readDS{static_cast<GDALDataset *>(
+        GDALOpenEx(m_activeGpkgPath.toUtf8().constData(),
+                   GDAL_OF_VECTOR | GDAL_OF_READONLY,
+                   nullptr, nullptr, nullptr))};
+    if (readDS.isValid()) {
+        const int newCount = readDS.get()->GetLayerCount();
+        for (int i = 0; i < newCount; ++i) {
+            OGRLayer *layer = readDS.get()->GetLayer(i);
+            if (layer)
+                result.layerNames << QString::fromUtf8(layer->GetName());
+        }
+    }
 
-    emit operationSucceeded(tr("Capa '%1' removida.").arg(layerName));
-    return true;
+    result.success = true;
+    return result;
 }
 
-void GeoManager::refreshLayers()
+// ---------------------------------------------------------------------------
+// Completion handlers (run on UI thread)
+// ---------------------------------------------------------------------------
+
+void GeoManager::onCreateGeoPackageFinished()
 {
-    setBusy(true);
-    reloadLayerNames();
+    if (!m_createGpkgWatcher)
+        return;
+
+    const CreateGpkgResult result = m_createGpkgWatcher->result();
+
+    if (result.success) {
+        setActiveGpkgPath(result.gpkgPath);
+        m_layerNames = result.layerNames;
+        emit layerNamesChanged();
+        setLastError(QString{});
+        emit operationSucceeded(tr("GeoPackage creado: %1").arg(result.gpkgPath));
+    } else {
+        setLastError(result.errorMsg);
+    }
+
+    setBusy(false);
+}
+
+void GeoManager::onOpenGeoPackageFinished()
+{
+    if (!m_openGpkgWatcher)
+        return;
+
+    const OpenGpkgResult result = m_openGpkgWatcher->result();
+
+    if (result.success) {
+        setActiveGpkgPath(result.gpkgPath);
+        m_layerNames = result.layerNames;
+        emit layerNamesChanged();
+        setLastError(QString{});
+        emit operationSucceeded(tr("Abierto: %1").arg(result.gpkgPath));
+    } else {
+        setLastError(result.errorMsg);
+    }
+
+    setBusy(false);
+}
+
+void GeoManager::onAddLayersFinished()
+{
+    if (!m_addLayersWatcher)
+        return;
+
+    const AddLayersResult result = m_addLayersWatcher->result();
+
+    if (result.success) {
+        m_layerNames = result.layerNames;
+        emit layerNamesChanged();
+        setLastError(QString{});
+        emit operationSucceeded(tr("Capas agregadas exitósamente."));
+    } else {
+        setLastError(result.errorMsg);
+    }
+
+    setBusy(false);
+}
+
+void GeoManager::onRemoveLayerFinished()
+{
+    if (!m_removeLayerWatcher)
+        return;
+
+    const RemoveLayerResult result = m_removeLayerWatcher->result();
+
+    if (result.success) {
+        m_layerNames = result.layerNames;
+        emit layerNamesChanged();
+        setLastError(QString{});
+        emit operationSucceeded(tr("Capa removida exitósamente."));
+    } else {
+        setLastError(result.errorMsg);
+    }
+
     setBusy(false);
 }

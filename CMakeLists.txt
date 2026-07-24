@@ -31,9 +31,9 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # ---------------------------------------------------------------------------
-# Qt6 – require Core, Quick, Qml (and Widgets only for native dialogs helper)
+# Qt6 – require Core, Quick, Qml, Concurrent (and Widgets only for native dialogs helper)
 # ---------------------------------------------------------------------------
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent)
 
 # ---------------------------------------------------------------------------
 # GDAL (installed via vcpkg)
@@ -86,6 +86,7 @@ target_link_libraries(proyectos_mdm_movil PUBLIC
     Qt6::Quick
     Qt6::Qml
     Qt6::QuickControls2
+    Qt6::Concurrent
     GDAL::GDAL
     libzip::zip
 )
