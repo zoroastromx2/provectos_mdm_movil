@@ -36,3 +36,4 @@ install_manifest.txt
 
 # macOS
 .DS_Store
+CMakeSettings.json
