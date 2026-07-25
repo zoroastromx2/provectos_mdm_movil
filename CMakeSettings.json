@@ -55,7 +55,13 @@
         },
         {
           "name": "CMAKE_PREFIX_PATH",
-          "value": "D:\\OSGeo4w\\proyectos_mdm_movil\\out\\build\\x64-Release\\vcpkg_installed\\x64-windows"
+          "value": "D:/OSGeo4w/proyectos_mdm_movil/build/Unnamed_Release2/vcpkg_installed/x64-windows;D:/OSGeo4w/proyectos_mdm_movil/build/Unnamed_Release2/vcpkg_installed/x64-windows/debug;c:/Qtwin/6.8.3/msvc2022_64",
+          "type": "STRING"
+        },
+        {
+          "name": "GDAL_DIR",
+          "value": "D:/OSGeo4w/proyectos_mdm_movil/build/Unnamed_Release2/vcpkg_installed/x64-windows/share/gdal",
+          "type": "PATH"
         }
       ]
     }

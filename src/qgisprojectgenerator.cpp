@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QRandomGenerator>
 #include <QXmlStreamWriter>
+#include <QtConcurrent>
 
 // GDAL / OGR
 #include <gdal.h>
@@ -143,7 +144,14 @@ QgisProjectGenerator::QgisProjectGenerator(QObject *parent)
     GDALAllRegister();
 }
 
-QgisProjectGenerator::~QgisProjectGenerator() = default;
+QgisProjectGenerator::~QgisProjectGenerator()
+{
+    // Clean up any pending watcher
+    if (m_generateWatcher) {
+        m_generateWatcher->waitForFinished();
+        delete m_generateWatcher;
+    }
+}
 
 QString QgisProjectGenerator::lastError() const { return m_lastError; }
 bool    QgisProjectGenerator::busy()      const { return m_busy; }
@@ -182,25 +190,25 @@ bool QgisProjectGenerator::generate(const QString &gpkgPath,
     setBusy(true);
     setLastError(QString{});
 
-    const QString name = projectName.isEmpty()
-                             ? QFileInfo(outputPath).baseName()
-                             : projectName;
-
-    const QByteArray xml = buildQgsXml(gpkgPath, name);
-    if (xml.isEmpty()) {
-        // lastError was set inside buildQgsXml
-        setBusy(false);
-        return false;
+    // Clean up any previous watcher
+    if (m_generateWatcher) {
+        m_generateWatcher->waitForFinished();
+        delete m_generateWatcher;
     }
 
-    if (!writeZip(outputPath, xml)) {
-        setBusy(false);
-        return false;
-    }
+    // Create a new watcher and connect it
+    m_generateWatcher = new QFutureWatcher<GenerateResult>(this);
+    connect(m_generateWatcher, &QFutureWatcher<GenerateResult>::finished,
+            this, &QgisProjectGenerator::onGenerationFinished);
 
-    setBusy(false);
-    emit generationSucceeded(outputPath);
-    return true;
+    // Launch the worker method in a thread pool
+    QFuture<GenerateResult> future = QtConcurrent::run(
+        [this, gpkgPath, outputPath, projectName]() {
+            return generateWorker(gpkgPath, outputPath, projectName);
+        });
+
+    m_generateWatcher->setFuture(future);
+    return true; // Always return true; result comes via signal
 }
 
 // ---------------------------------------------------------------------------
@@ -567,4 +575,56 @@ bool QgisProjectGenerator::writeZip(const QString    &zipPath,
     }
 
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// Worker method (runs in background thread)
+// ---------------------------------------------------------------------------
+
+QgisProjectGenerator::GenerateResult QgisProjectGenerator::generateWorker(
+    const QString &gpkgPath, const QString &outputPath, const QString &projectName)
+{
+    GenerateResult result;
+    result.success = false;
+    result.errorMsg.clear();
+    result.outputPath = outputPath;
+
+    const QString name = projectName.isEmpty()
+                             ? QFileInfo(outputPath).baseName()
+                             : projectName;
+
+    const QByteArray xml = buildQgsXml(gpkgPath, name);
+    if (xml.isEmpty()) {
+        result.errorMsg = m_lastError;
+        return result;
+    }
+
+    if (!writeZip(outputPath, xml)) {
+        result.errorMsg = m_lastError;
+        return result;
+    }
+
+    result.success = true;
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// Completion handler (runs on UI thread when worker finishes)
+// ---------------------------------------------------------------------------
+
+void QgisProjectGenerator::onGenerationFinished()
+{
+    if (!m_generateWatcher)
+        return;
+
+    const GenerateResult result = m_generateWatcher->result();
+
+    if (result.success) {
+        setLastError(QString{});
+        emit generationSucceeded(result.outputPath);
+    } else {
+        setLastError(result.errorMsg);
+    }
+
+    setBusy(false);
 }

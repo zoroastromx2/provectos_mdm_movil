@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QFutureWatcher>
 #include <QtQml/qqmlregistration.h>
 #include <qqml.h>
 
@@ -36,12 +37,17 @@ public:
     /**
      * @brief Generate a .qgz project file from a GeoPackage.
      *
+     * NOTA: Esta operación es ahora ASINCRÓNICA (v0.2.0+).
+     * El método retorna inmediatamente; el resultado llega vía signal
+     * generationSucceeded() cuando termina, o lastError si falla.
+     * Usa la propiedad busy para indicar operación en progreso.
+     *
      * @param gpkgPath   Absolute path to the source GeoPackage file.
      * @param outputPath Absolute path for the output .qgz file (will be
      *                   created or overwritten).
      * @param projectName Human-readable name embedded in the QGIS project.
      *                    Defaults to the output file's base name.
-     * @return true on success, false on failure (inspect lastError).
+     * @return true if queued successfully, false if validation failed.
      */
     Q_INVOKABLE bool generate(const QString &gpkgPath,
                               const QString &outputPath,
@@ -53,6 +59,21 @@ signals:
     void generationSucceeded(const QString &outputPath);
 
 private:
+    // Result struct for asynchronous generation
+    struct GenerateResult {
+        bool success;
+        QString errorMsg;
+        QString outputPath;
+    };
+
+    // Worker method (runs in background thread)
+    GenerateResult generateWorker(const QString &gpkgPath,
+                                  const QString &outputPath,
+                                  const QString &projectName);
+
+    // Completion handler (runs in UI thread when worker finishes)
+    void onGenerationFinished();
+
     // Build the complete QGIS 3.40 XML document as a UTF-8 byte array.
     QByteArray buildQgsXml(const QString &gpkgPath,
                            const QString &projectName);
@@ -67,4 +88,6 @@ private:
 
     QString m_lastError;
     bool    m_busy{false};
+
+    QFutureWatcher<GenerateResult> *m_generateWatcher{nullptr};
 };

@@ -45,6 +45,15 @@
   - Métricas de performance
   - Reporte de issues
 
+### 5. **QGIS_GENERATOR_ASYNC_MIGRATION.md** ? NUEVO
+- **Duración:** 10 minutos
+- **Para:** Desarrolladores que necesitan entender la segunda migración
+- **Contiene:**
+  - Migración de `QgisProjectGenerator::generate()`
+  - Comparativa antes/después
+  - Cambios en QML
+  - Testing recomendado
+
 ---
 
 ## ?? Resúmenes Ejecutivos
@@ -104,7 +113,8 @@
 1. START_HERE.md (validación rápida)
 2. QUICK_REFERENCE.md (cambios de API)
 3. ASYNC_THREADING_MIGRATION.md (entiende por qué)
-4. Ejecutar TESTING_ASYNC_OPERATIONS.md
+4. QGIS_GENERATOR_ASYNC_MIGRATION.md (segunda migración)
+5. Ejecutar TESTING_ASYNC_OPERATIONS.md
 
 ### Ruta 2: "Soy tech lead / revisor de código"
 1. SUMMARY_ASYNC_OPTIMIZATION.md (big picture)

@@ -8,11 +8,15 @@ import App 1.0
 /**
  * GeoPackagePanel.qml
  *
- * Provides the full GeoPackage CRUD interface:
- *   • Create a new .gpkg from one or more Shapefiles.
- *   • Open an existing .gpkg and view its layers.
- *   • Add more Shapefiles as new layers into the active .gpkg.
- *   • Remove individual layers from the active .gpkg.
+ * Proporciona la interfaz completa de CRUD para GeoPackage:
+ *   • Crear un nuevo .gpkg desde uno o más Shapefiles.
+ *   • Abrir un .gpkg existente y ver sus capas.
+ *   • Agregar más Shapefiles como nuevas capas al .gpkg activo.
+ *   • Eliminar capas individuales del .gpkg activo.
+ *
+ * NOTA (v0.2.0+): Todas las operaciones ahora son asincrónicas.
+ * Los cambios en layerNames, lastError, etc. llegan vía signals.
+ * Use la propiedad 'busy' para indicadores visuales.
  */
 Item {
     id: root
@@ -149,6 +153,7 @@ Item {
                     Button {
                         text: qsTr("Seleccionar .shp…")
                         icon.name: "document-open"
+                        enabled: !root.geoMgr.busy
                         onClicked: shpOpenDialog.open()
                     }
 
@@ -185,7 +190,7 @@ Item {
                     text: qsTr("Guardar GeoPackage como…")
                     Material.background: Material.Teal
                     Material.foreground: "white"
-                    enabled: shpListModel.count > 0
+                    enabled: shpListModel.count > 0 && !root.geoMgr.busy
                     onClicked: gpkgSaveDialog.open()
                 }
             }
@@ -201,6 +206,7 @@ Item {
 
                 Button {
                     text: qsTr("Abrir .gpkg…")
+                    enabled: !root.geoMgr.busy
                     onClicked: gpkgOpenDialog.open()
                 }
 
@@ -219,13 +225,13 @@ Item {
                 Button {
                     text: qsTr("Actualizar")
                     flat: true
-                    enabled: root.geoMgr.activeGpkgPath.length > 0
+                    enabled: root.geoMgr.activeGpkgPath.length > 0 && !root.geoMgr.busy
                     onClicked: root.geoMgr.refreshLayers()
                 }
 
                 Button {
                     text: qsTr("Visualizar")
-                    enabled: root.geoMgr.activeGpkgPath.length > 0
+                    enabled: root.geoMgr.activeGpkgPath.length > 0 && !root.geoMgr.busy
                     Material.background: Material.Teal
                     Material.foreground: "white"
                     onClicked: viewerDialog.open()
@@ -246,7 +252,7 @@ Item {
                 // Add-layers button
                 Button {
                     text: qsTr("Agregar capas (.shp)…")
-                    enabled: root.geoMgr.activeGpkgPath.length > 0
+                    enabled: root.geoMgr.activeGpkgPath.length > 0 && !root.geoMgr.busy
                     onClicked: shpAddDialog.open()
                 }
 
@@ -346,12 +352,90 @@ Item {
         }
 
         // ── Internal status (shown within the panel) ──────────────────────
-        Label {
-            id: statusLabel
+
+        // Indicador de progreso (visible durante operaciones async)
+        Rectangle {
+            id: progressContainer
             Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            font.pixelSize: 12
-            visible: text.length > 0
+            height: 50
+            visible: root.geoMgr.busy
+            color: Material.backgroundColor
+            border.color: Material.primary
+            border.width: 1
+            radius: 4
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 12
+
+                BusyIndicator {
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    running: root.geoMgr.busy
+                }
+
+                Label {
+                    text: qsTr("Procesando operación GeoPackage…")
+                    Layout.fillWidth: true
+                    color: Material.primary
+                }
+            }
+        }
+
+        // Panel de estado/resultados
+        Rectangle {
+            id: statusContainer
+            Layout.fillWidth: true
+            Layout.minimumHeight: 50
+            visible: statusLabel.text.length > 0 && !root.geoMgr.busy
+            color: statusLabel.color === Material.color(Material.Red) ? 
+                   Material.backgroundColor : Material.primary.withAlpha(0.1)
+            border.color: statusLabel.color
+            border.width: 1
+            radius: 4
+
+            Label {
+                id: statusLabel
+                anchors.fill: parent
+                anchors.margins: 12
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                verticalAlignment: Text.AlignVCenter
+            }
         }
     }
-}
+
+    // =========================================================================
+    // Listeners para operaciones asincrónicas (v0.2.0+)
+    // =========================================================================
+    Connections {
+        target: root.geoMgr
+
+        // Cuando una operación se completa exitosamente
+        function onOperationSucceeded(message) {
+            statusLabel.color = Material.color(Material.Green)
+            statusLabel.text = qsTr("✓ ") + message
+        }
+
+        // Cuando hay error en cualquier operación
+        function onLastErrorChanged() {
+            if (root.geoMgr.lastError.length > 0) {
+                statusLabel.color = Material.color(Material.Red)
+                statusLabel.text = qsTr("✗ Error: ") + root.geoMgr.lastError
+            }
+        }
+
+        // Cuando cambia el estado de ocupado
+        function onBusyChanged() {
+            if (!root.geoMgr.busy) {
+                // Operación finalizada (éxito o error)
+                // statusLabel ya debería estar actualizado vía signals
+            }
+        }
+
+        // Cuando cambian las capas disponibles
+        function onLayerNamesChanged() {
+            // La ListView se actualiza automáticamente vía binding
+        }
+    }
