@@ -156,10 +156,10 @@ ApplicationWindow {
                     ScrollView {
                         anchors.fill: parent
                         clip: true
-                        // El child se ajusta al ancho disponible para reflow
-                        ColumnLayout {
+                        contentWidth: availableWidth
+                        GeoPackagePanel {
+                            geoMgr: geoManager
                             width: parent.width
-                            GeoPackagePanel { geoMgr: geoManager; width: parent.width }
                         }
                     }
                 }
@@ -171,9 +171,11 @@ ApplicationWindow {
                     ScrollView {
                         anchors.fill: parent
                         clip: true
-                        ColumnLayout {
+                        contentWidth: availableWidth
+                        QgisGeneratorPanel {
+                            geoMgr: geoManager
+                            qgisMgr: qgisGen
                             width: parent.width
-                            QgisGeneratorPanel { geoMgr: geoManager; qgisMgr: qgisGen; width: parent.width }
                         }
                     }
                 }

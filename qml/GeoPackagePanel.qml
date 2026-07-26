@@ -20,6 +20,7 @@ import App 1.0
  */
 Item {
     id: root
+    implicitHeight: mainLayout.implicitHeight + 32
 
     // The GeoManager singleton injected from main.qml
     required property var geoMgr
@@ -125,8 +126,10 @@ Item {
     // UI layout
     // -----------------------------------------------------------------------
     ColumnLayout {
-        anchors.fill:    parent
-        anchors.margins: 16
+        id: mainLayout
+        x: 16
+        y: 16
+        width: parent.width - 32
         spacing:         12
 
         // ── Section title ────────────────────────────────────────────────
@@ -142,7 +145,7 @@ Item {
             Layout.fillWidth: true
 
             ColumnLayout {
-                anchors.fill: parent
+                width: parent.width
                 spacing: 8
 
                 // Shapefile list
@@ -205,6 +208,7 @@ Item {
             Layout.fillWidth: true
 
             RowLayout {
+                width: parent.width
                 spacing: 12
 
                 Button {
@@ -245,11 +249,11 @@ Item {
         // ── Row 3: Layer management ───────────────────────────────────────
         GroupBox {
             title: qsTr("Capas en el GeoPackage activo")
-            Layout.fillWidth:  true
-            Layout.fillHeight: true
+            Layout.fillWidth:    true
+            Layout.minimumHeight: 220
 
             ColumnLayout {
-                anchors.fill: parent
+                width: parent.width
                 spacing: 8
 
                 // Add-layers button
@@ -261,8 +265,9 @@ Item {
 
                 // Layer list
                 Rectangle {
-                    Layout.fillWidth:  true
-                    Layout.fillHeight: true
+                    Layout.fillWidth:    true
+                    Layout.minimumHeight: 140
+                    Layout.preferredHeight: 140
                     border.color: Material.color(Material.Grey, Material.Shade300)
                     border.width: 1
                     radius: 4

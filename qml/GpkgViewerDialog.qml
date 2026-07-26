@@ -37,7 +37,7 @@ Dialog {
                 columns: 2
                 columnSpacing: 16
                 rowSpacing: 6
-                Layout.fillWidth: true
+                width: parent.width
 
                 Label { text: qsTr("Ruta:"); font.weight: Font.Medium }
                 Label {
@@ -67,8 +67,8 @@ Dialog {
             Layout.fillHeight: true
 
             ColumnLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                width: parent.width
+                height: parent.height
                 spacing: 4
 
                 // Header row

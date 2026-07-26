@@ -8,6 +8,7 @@ import App 1.0
 
 Item {
     id: root
+    implicitHeight: mainLayout.implicitHeight + 32
 
     // Tipado fuerte (mejor validación en carga)
     required property GeoManager geoMgr
@@ -41,8 +42,10 @@ Item {
     }
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 16
+        id: mainLayout
+        x: 16
+        y: 16
+        width: parent.width - 32
         spacing: 12
 
         Label {
@@ -90,7 +93,7 @@ Item {
             Layout.fillWidth: true
 
             ColumnLayout {
-                anchors.fill: parent
+                width: parent.width
                 spacing: 8
 
                 RowLayout {
@@ -204,8 +207,7 @@ Item {
             }
         }
 
-        // Espaciador flexible
-        Item { Layout.fillHeight: true }
+        // (sin espaciador: height lo controla el ScrollView)
     }
 
     // =========================================================================
