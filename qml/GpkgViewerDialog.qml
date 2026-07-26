@@ -13,20 +13,112 @@ Dialog {
     modal: true
     closePolicy: Dialog.CloseOnEscape | Dialog.CloseOnPressOutside
     anchors.centerIn: Overlay.overlay
-    width: Math.min(parent ? parent.width * 0.85 : 800, 960)
-    height: Math.min(parent ? parent.height * 0.85 : 600, 700)
 
-    property var fileInfo: ({})
+    // Tamaño inicial responsivo; se actualiza al abrir y al redimensionar
+    property real dlgWidth:  Overlay.overlay ? Math.max(520, Overlay.overlay.width  * 0.85) : 640
+    property real dlgHeight: Overlay.overlay ? Math.max(380, Overlay.overlay.height * 0.85) : 500
+
+    width:  dlgWidth
+    height: dlgHeight
+
+    // Sincronizar tamaño inicial y cargar datos cada vez que se abre el diálogo
+    onOpened: {
+        dlgWidth   = Overlay.overlay ? Math.max(520, Overlay.overlay.width  * 0.85) : 640
+        dlgHeight  = Overlay.overlay ? Math.max(380, Overlay.overlay.height * 0.85) : 500
+        fileInfo   = root.geoMgr.getGpkgFileInfo()
+        layerList  = root.geoMgr.getAllLayerInfo()
+    }
+
+    // Pesos de columna (valor relativo; RowLayout los normaliza)
+    // Extensión recibe más espacio, Features menos
+    readonly property real colNombre:   3.0
+    readonly property real colTipo:     1.8
+    readonly property real colCRS:      1.8
+    readonly property real colFeatures: 1.0
+    readonly property real colExtent:   2.4
+
+    // Tamaño mínimo del diálogo al redimensionar
+    readonly property real minDlgW: 420
+    readonly property real minDlgH: 300
+
+    property var fileInfo:  ({})
     property var layerList: []
 
-    onOpened: {
-        root.fileInfo = root.geoMgr.getGpkgFileInfo()
-        root.layerList = root.geoMgr.getAllLayerInfo()
+    // ── Handles de redimensionado ─────────────────────────────────────
+    // Borde derecho
+    MouseArea {
+        z: 10
+        anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+        width: 6
+        cursorShape: Qt.SizeHorCursor
+        property real startX: 0
+        property real startW: 0
+        onPressed: (mouse) => { startX = mouse.x; startW = root.dlgWidth }
+        onPositionChanged: (mouse) => {
+            const delta = mouse.x - startX
+            root.dlgWidth = Math.max(root.minDlgW, startW + delta)
+        }
+    }
+    // Borde izquierdo
+    MouseArea {
+        z: 10
+        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        width: 6
+        cursorShape: Qt.SizeHorCursor
+        property real startX: 0
+        property real startW: 0
+        onPressed: (mouse) => { startX = mouse.x; startW = root.dlgWidth }
+        onPositionChanged: (mouse) => {
+            const delta = startX - mouse.x
+            root.dlgWidth = Math.max(root.minDlgW, startW + delta)
+        }
+    }
+    // Borde inferior
+    MouseArea {
+        z: 10
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: 6
+        cursorShape: Qt.SizeVerCursor
+        property real startY: 0
+        property real startH: 0
+        onPressed: (mouse) => { startY = mouse.y; startH = root.dlgHeight }
+        onPositionChanged: (mouse) => {
+            const delta = mouse.y - startY
+            root.dlgHeight = Math.max(root.minDlgH, startH + delta)
+        }
+    }
+    // Borde superior
+    MouseArea {
+        z: 10
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        height: 6
+        cursorShape: Qt.SizeVerCursor
+        property real startY: 0
+        property real startH: 0
+        onPressed: (mouse) => { startY = mouse.y; startH = root.dlgHeight }
+        onPositionChanged: (mouse) => {
+            const delta = startY - mouse.y
+            root.dlgHeight = Math.max(root.minDlgH, startH + delta)
+        }
+    }
+    // Esquina inferior-derecha
+    MouseArea {
+        z: 11
+        anchors { right: parent.right; bottom: parent.bottom }
+        width: 12; height: 12
+        cursorShape: Qt.SizeFDiagCursor
+        property real startX: 0; property real startY: 0
+        property real startW: 0; property real startH: 0
+        onPressed: (mouse) => { startX = mouse.x; startY = mouse.y; startW = root.dlgWidth; startH = root.dlgHeight }
+        onPositionChanged: (mouse) => {
+            root.dlgWidth  = Math.max(root.minDlgW, startW + mouse.x - startX)
+            root.dlgHeight = Math.max(root.minDlgH, startH + mouse.y - startY)
+        }
     }
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: 8
 
         // ── File info ────────────────────────────────────────────────
         GroupBox {
@@ -74,38 +166,43 @@ Dialog {
                 // Header row
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: 2
 
                     Rectangle {
-                        Layout.fillWidth: true; Layout.preferredWidth: 100
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: root.colNombre
                         height: 28
                         color: Material.color(Material.Grey, Material.Shade200)
                         radius: 2
                         Label { anchors.fill: parent; anchors.leftMargin: 6; text: qsTr("Nombre"); font.pixelSize: 12; font.weight: Font.Medium; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
                     }
                     Rectangle {
-                        Layout.fillWidth: true; Layout.preferredWidth: 120
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: root.colTipo
                         height: 28
                         color: Material.color(Material.Grey, Material.Shade200)
                         radius: 2
                         Label { anchors.fill: parent; anchors.leftMargin: 6; text: qsTr("Tipo"); font.pixelSize: 12; font.weight: Font.Medium; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
                     }
                     Rectangle {
-                        Layout.fillWidth: true; Layout.preferredWidth: 100
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: root.colCRS
                         height: 28
                         color: Material.color(Material.Grey, Material.Shade200)
                         radius: 2
                         Label { anchors.fill: parent; anchors.leftMargin: 6; text: qsTr("CRS"); font.pixelSize: 12; font.weight: Font.Medium; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
                     }
                     Rectangle {
-                        Layout.fillWidth: true; Layout.preferredWidth: 100
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: root.colFeatures
                         height: 28
                         color: Material.color(Material.Grey, Material.Shade200)
                         radius: 2
                         Label { anchors.fill: parent; anchors.leftMargin: 6; text: qsTr("Features"); font.pixelSize: 12; font.weight: Font.Medium; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
                     }
                     Rectangle {
-                        Layout.fillWidth: true; Layout.preferredWidth: 100
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: root.colExtent
                         height: 28
                         color: Material.color(Material.Grey, Material.Shade200)
                         radius: 2
@@ -133,28 +230,28 @@ Dialog {
                         RowLayout {
                             anchors.fill: parent
                             anchors.leftMargin: 4
-                            spacing: 4
+                            spacing: 2
 
                             Label {
                                 text: layerRow.modelData.name || ""
-                               // Layout.preferredWidth: parent.width * 0.30
-                                Layout.fillWidth: true; Layout.preferredWidth: 30
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: root.colNombre
                                 font.pixelSize: 12
                                 elide: Text.ElideRight
                                 verticalAlignment: Text.AlignVCenter
                             }
                             Label {
                                 text: layerRow.modelData.geomType || ""
-                                //Layout.preferredWidth: parent.width * 0.14
-                                Layout.fillWidth: true; Layout.preferredWidth: 14
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: root.colTipo
                                 font.pixelSize: 12
                                 elide: Text.ElideRight
                                 verticalAlignment: Text.AlignVCenter
                             }
                             Label {
                                 text: layerRow.modelData.crsAuth || ""
-                                //Layout.preferredWidth: parent.width * 0.20
-                                Layout.fillWidth: true; Layout.preferredWidth: 20
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: root.colCRS
                                 font.pixelSize: 12
                                 elide: Text.ElideRight
                                 verticalAlignment: Text.AlignVCenter
@@ -162,8 +259,8 @@ Dialog {
                             Label {
                                 text: layerRow.modelData.featureCount
                                       ? Number(layerRow.modelData.featureCount).toLocaleString() : "0"
-                                //Layout.preferredWidth: parent.width * 0.10
-                                Layout.fillWidth: true; Layout.preferredWidth: 10
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: root.colFeatures
                                 font.pixelSize: 12
                                 horizontalAlignment: Text.AlignRight
                                 verticalAlignment: Text.AlignVCenter
@@ -174,8 +271,8 @@ Dialog {
                                             Number(layerRow.modelData.minX).toLocaleString(undefined, 'fixed', 2)).arg(
                                             Number(layerRow.modelData.minY).toLocaleString(undefined, 'fixed', 2))
                                       : ""
-                                //Layout.preferredWidth: parent.width * 0.26
-                                Layout.fillWidth: true; Layout.preferredWidth: 26
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: root.colExtent
                                 font.pixelSize: 11
                                 elide: Text.ElideRight
                                 verticalAlignment: Text.AlignVCenter
