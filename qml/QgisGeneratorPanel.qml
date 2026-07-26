@@ -98,7 +98,8 @@ Item {
 
                     Label {
                         text: qsTr("Archivo de origen:")
-                        Layout.preferredWidth: 120
+                        Layout.minimumWidth: 90
+                        Layout.preferredWidth: Math.max(90, Math.min(160, root.width * 0.22))
                     }
 
                     TextField {
@@ -121,7 +122,8 @@ Item {
 
                     Label {
                         text: qsTr("Ubicación de salida:")
-                        Layout.preferredWidth: 120
+                        Layout.minimumWidth: 90
+                        Layout.preferredWidth: Math.max(90, Math.min(160, root.width * 0.22))
                     }
 
                     TextField {
@@ -144,7 +146,8 @@ Item {
 
                     Label {
                         text: qsTr("Nombre del proyecto:")
-                        Layout.preferredWidth: 120
+                        Layout.minimumWidth: 90
+                        Layout.preferredWidth: Math.max(90, Math.min(160, root.width * 0.22))
                     }
 
                     TextField {
@@ -185,7 +188,7 @@ Item {
             Layout.fillWidth: true
             Layout.minimumHeight: 60
             visible: resultLabel.text.length > 0
-            color: resultLabel.color === Material.color(Material.Red) ? 
+            color: resultLabel.color === Material.color(Material.Red) ?
                    Material.backgroundColor : Material.primary.withAlpha(0.1)
             border.color: resultLabel.color
             border.width: 1

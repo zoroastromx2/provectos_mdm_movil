@@ -67,7 +67,7 @@ Item {
     FileDialog {
         id: gpkgOpenDialog
         title:       qsTr("Abrir GeoPackage existente")
-        nameFilters: [ qsTr("GeoPackage (*.gpkg)") ]
+        nameFilters: [ qsTr("GeoPackage (*.gpkg)")]
         fileMode:    FileDialog.OpenFile
 
         onAccepted: {
@@ -80,7 +80,7 @@ Item {
     FileDialog {
         id: shpAddDialog
         title:       qsTr("Agregar Shapefiles al GeoPackage activo")
-        nameFilters: [ qsTr("Shapefiles (*.shp)") ]
+        nameFilters: [ qsTr("Shapefiles (*.shp)")]
         fileMode:    FileDialog.OpenFiles
 
         onAccepted: {
@@ -163,6 +163,8 @@ Item {
                               : qsTr("Ningún archivo seleccionado")
                         font.italic: shpListModel.count === 0
                         color: shpListModel.count === 0 ? Material.color(Material.Grey) : Material.foreground
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
                     }
                 }
 
@@ -182,6 +184,7 @@ Item {
                             elide: Text.ElideLeft
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
+                            Layout.fillWidth: true
                         }
                     }
                 }
@@ -389,7 +392,7 @@ Item {
             Layout.fillWidth: true
             Layout.minimumHeight: 50
             visible: statusLabel.text.length > 0 && !root.geoMgr.busy
-            color: statusLabel.color === Material.color(Material.Red) ? 
+            color: statusLabel.color === Material.color(Material.Red) ?
                    Material.backgroundColor : Material.primary.withAlpha(0.1)
             border.color: statusLabel.color
             border.width: 1
@@ -439,3 +442,4 @@ Item {
             // La ListView se actualiza automáticamente vía binding
         }
     }
+}

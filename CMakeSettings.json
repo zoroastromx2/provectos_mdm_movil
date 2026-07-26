@@ -17,7 +17,7 @@
       "configurationType": "Release",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeExecutable": "C:/Strawberry/c/bin/cmake.exe",
+      "cmakeExecutable": "D:/Strawberry/c/bin/cmake.exe",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
@@ -25,22 +25,22 @@
       "variables": [
         {
           "name": "CMAKE_C_COMPILER",
-          "value": "d:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
+          "value": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
           "type": "FILEPATH"
         },
         {
           "name": "CMAKE_CXX_COMPILER",
-          "value": "d:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
+          "value": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
           "type": "FILEPATH"
         },
         {
           "name": "Z_VCPKG_CL",
-          "value": "d:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
+          "value": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
           "type": "FILEPATH"
         },
         {
           "name": "CMAKE_MAKE_PROGRAM",
-          "value": "C:/Strawberry/c/bin/ninja.exe",
+          "value": "D:/Strawberry/c/bin/ninja.exe",
           "type": "FILEPATH"
         },
         {
@@ -50,17 +50,17 @@
         },
         {
           "name": "Qt6_DIR",
-          "value": "c:/Qtwin/6.8.3/msvc2022_64/lib/cmake/Qt6",
+          "value": "c:/Qtwin/6.8.3/msvc2022_64/lib/cmake/Qt6", 
           "type": "PATH"
         },
         {
           "name": "CMAKE_PREFIX_PATH",
-          "value": "D:/OSGeo4w/proyectos_mdm_movil/build/Unnamed_Release2/vcpkg_installed/x64-windows;D:/OSGeo4w/proyectos_mdm_movil/build/Unnamed_Release2/vcpkg_installed/x64-windows/debug;c:/Qtwin/6.8.3/msvc2022_64",
+          "value": "E:\\\\AAA\\\\proyectos_mdm_movil\\\\build\\\\Desktop_Qt_6_8_3_MSVC2022_64bit_Release\\\\vcpkg_installed\\\\x64-windows;E:\\AAA\\proyectos_mdm_movil\\build\\Desktop_Qt_6_8_3_MSVC2022_64bit_Release\\vcpkg_installed\\x64-windows\\debug;c:/Qtwin/6.8.3/msvc2022_64",
           "type": "STRING"
         },
         {
           "name": "GDAL_DIR",
-          "value": "D:/OSGeo4w/proyectos_mdm_movil/build/Unnamed_Release2/vcpkg_installed/x64-windows/share/gdal",
+          "value": "E:\\AAA\\proyectos_mdm_movil\\build\\Desktop_Qt_6_8_3_MSVC2022_64bit_Release\\vcpkg_installed\\x64-windows\\share\\gdal",
           "type": "PATH"
         }
       ]

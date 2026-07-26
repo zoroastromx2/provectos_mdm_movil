@@ -8,9 +8,12 @@ ApplicationWindow {
     id: root
 
     visible: true
-    minimumWidth: 900
-    minimumHeight: 620
+    minimumWidth: 600
+    minimumHeight: 420
     title: qsTr("Proyectos MDM Móvil 0.0.1")
+
+    // Modo compacto cuando la ventana es estrecha
+    property bool compact: width < 700
 
     Material.theme: Material.Light
     Material.accent: Material.Teal
@@ -55,6 +58,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
+                spacing: 8
 
                 Label {
                     text: qsTr("Proyectos MDM Móvil")
@@ -64,6 +68,15 @@ ApplicationWindow {
                 }
 
                 Item { Layout.fillWidth: true }
+
+                // Selector compacto para pantallas pequeñas
+                ComboBox {
+                    visible: root.compact
+                    model: [ qsTr("GeoPackage"), qsTr("Proyecto QGIS") ]
+                    currentIndex: swipeView.currentIndex
+                    onCurrentIndexChanged: swipeView.currentIndex = currentIndex
+                    implicitWidth: 180
+                }
 
                 BusyIndicator {
                     running: geoManager.busy || qgisGen.busy
@@ -80,9 +93,11 @@ ApplicationWindow {
             Layout.fillHeight: true
             spacing: 0
 
+            // Sidebar: ocultar en modo compacto; ancho proporcional en pantallas grandes
             Pane {
+                visible: !root.compact
                 Layout.fillHeight: true
-                implicitWidth: 120
+                Layout.preferredWidth: Math.max(120, root.width * 0.18)
                 Material.elevation: 2
                 padding: 0
 
@@ -127,14 +142,41 @@ ApplicationWindow {
                 }
             }
 
+            // Área principal: SwipeView con cada página envuelta en ScrollView
             SwipeView {
                 id: swipeView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 interactive: false
 
-                GeoPackagePanel { geoMgr: geoManager }
-                QgisGeneratorPanel { geoMgr: geoManager; qgisMgr: qgisGen }
+                // Página GeoPackage (scrollable)
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    ScrollView {
+                        anchors.fill: parent
+                        clip: true
+                        // El child se ajusta al ancho disponible para reflow
+                        ColumnLayout {
+                            width: parent.width
+                            GeoPackagePanel { geoMgr: geoManager; width: parent.width }
+                        }
+                    }
+                }
+
+                // Página QGIS Generator (scrollable)
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    ScrollView {
+                        anchors.fill: parent
+                        clip: true
+                        ColumnLayout {
+                            width: parent.width
+                            QgisGeneratorPanel { geoMgr: geoManager; qgisMgr: qgisGen; width: parent.width }
+                        }
+                    }
+                }
             }
         }
 
