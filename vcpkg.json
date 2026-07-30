@@ -1,4 +1,14 @@
 {
+
+"vcpkg-configuration": {
+      "overlay-ports": [
+        "vcpkg/ports"
+      ],
+      "overlay-triplets": [
+        "vcpkg/triplets"
+      ]
+    },
+
 "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
 "name": "proyectos-mdm-movil",
 "version": "0.1.0",
@@ -16,6 +26,12 @@
     "name": "libspatialite",
     "default-features": false,
     "features": ["freexl"]
+  },
+  "qgis",
+  {
+    "name": "qgis",
+    "host": true,
+    "default-features": false
   },
   "zlib",
   "zstd",
