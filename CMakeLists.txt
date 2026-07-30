@@ -33,7 +33,7 @@ set(CMAKE_AUTOUIC ON)
 # ---------------------------------------------------------------------------
 # Qt6 – require Core, Quick, Qml, Concurrent (and Widgets only for native dialogs helper)
 # ---------------------------------------------------------------------------
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent Widgets)
 
 # ---------------------------------------------------------------------------
 # GDAL (installed via vcpkg)
@@ -46,6 +46,19 @@ find_package(GDAL CONFIG REQUIRED)
 find_package(libzip CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
+# QGIS (debe estar instalado en el sistema o via vcpkg/custom path)
+# Ajusta QGIS_PREFIX_PATH si QGIS no está en las rutas estándar
+# ---------------------------------------------------------------------------
+# NOTA: Si QGIS no está en vcpkg, debes instalarlo manualmente y configurar:
+# set(QGIS_PREFIX_PATH "C:/OSGeo4W64" CACHE PATH "QGIS installation path")
+# list(APPEND CMAKE_PREFIX_PATH "${QGIS_PREFIX_PATH}")
+
+find_package(QGIS REQUIRED)
+if(NOT QGIS_FOUND)
+    message(FATAL_ERROR "QGIS no encontrado. Por favor instala QGIS e inicia QGIS_PREFIX_PATH.")
+endif()
+
+# ---------------------------------------------------------------------------
 # Executable + QML module
 # ---------------------------------------------------------------------------
 qt_add_executable(proyectos_mdm_movil
@@ -54,6 +67,8 @@ qt_add_executable(proyectos_mdm_movil
     src/geomanager.h
     src/qgisprojectgenerator.cpp
     src/qgisprojectgenerator.h
+   # src/qgisprojectviewer.cpp
+   # src/qgisprojectviewer.h
 )
 
 qt_add_qml_module(proyectos_mdm_movil
@@ -64,18 +79,24 @@ qt_add_qml_module(proyectos_mdm_movil
         qml/GeoPackagePanel.qml
         qml/GpkgViewerDialog.qml
         qml/QgisGeneratorPanel.qml
+       # qml/QgisViewerWindow.qml
     SOURCES
         src/main.cpp
         src/qgisprojectgenerator.h
         src/qgisprojectgenerator.cpp
         src/geomanager.h
         src/geomanager.cpp
+       # src/qgisprojectviewer.h
+       # src/qgisprojectviewer.h
 )
 
 # ---------------------------------------------------------------------------
-# Include paths for our source
+# Include paths for our source + QGIS
 # ---------------------------------------------------------------------------
-target_include_directories(proyectos_mdm_movil PRIVATE src)
+target_include_directories(proyectos_mdm_movil PRIVATE
+    src
+    ${QGIS_INCLUDE_DIR}
+)
 
 # ---------------------------------------------------------------------------
 # Link libraries
@@ -87,8 +108,11 @@ target_link_libraries(proyectos_mdm_movil PUBLIC
     Qt6::Qml
     Qt6::QuickControls2
     Qt6::Concurrent
+    Qt6::Widgets
     GDAL::GDAL
     libzip::zip
+    ${QGIS_CORE_LIBRARY}
+    ${QGIS_GUI_LIBRARY}
 )
 
 # ---------------------------------------------------------------------------
