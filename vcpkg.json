@@ -6,20 +6,31 @@
 "description": "GIS tool for creating and managing GeoPackage files and QGIS projects",
 "dependencies": [
   {
-    "name": "gdal",
-    "default-features": true,
-    "features": ["tools"]
-  },
+      "name": "gdal",
+      "features": [
+        "curl",
+        "expat",
+        "geos",
+        "gif",
+        "iconv",
+        "jpeg",
+        "lerc",
+        "libkml",
+        "libspatialite",
+        "libxml2",
+        "lzma",
+        "openjpeg",
+        "openssl",
+        "pcre2",
+        "png",
+        "postgresql",
+        "qhull",
+        "webp",
+        "zstd"
+      ]
+   },
   "libzip",
   "sqlite3",
-  "geos",
-  {
-    "name": "libspatialite",
-    "default-features": false,
-    "features": ["freexl"]
-  },
-  "zlib",
-  "zstd",
   "proj"
 ],
 "builtin-baseline": "d6995a0cf3cafda5e9e52749fad075dd62bfd90c"
