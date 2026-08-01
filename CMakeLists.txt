@@ -33,7 +33,7 @@ set(CMAKE_AUTOUIC ON)
 # ---------------------------------------------------------------------------
 # Qt6 – require Core, Quick, Qml, Concurrent (and Widgets only for native dialogs helper)
 # ---------------------------------------------------------------------------
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent Widgets)
 
 # ---------------------------------------------------------------------------
 # GDAL (installed via vcpkg)
@@ -101,7 +101,7 @@ target_link_libraries(proyectos_mdm_movil PUBLIC
     Qt6::Qml
     Qt6::QuickControls2
     Qt6::Concurrent
-    #Qt6::Widgets
+    Qt6::Widgets
     GDAL::GDAL
     libzip::zip
  #   ${QGIS_CORE_LIBRARY}
