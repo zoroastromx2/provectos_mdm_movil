@@ -8,8 +8,8 @@
 // Kept intentionally: ensures translation units with QML type registration
 // metadata are linked into the final binary.
 // Pull in the auto-generated registration code produced by qt_add_qml_module
-#include "geomanager.h"
-#include "qgisprojectgenerator.h"
+//#include "geomanager.h"
+//#include "qgisprojectgenerator.h"
 
 // ---------------------------------------------------------------------------
 // Automatically set GDAL/PROJ runtime environment variables if not already

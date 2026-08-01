@@ -33,7 +33,7 @@ set(CMAKE_AUTOUIC ON)
 # ---------------------------------------------------------------------------
 # Qt6 – require Core, Quick, Qml, Concurrent (and Widgets only for native dialogs helper)
 # ---------------------------------------------------------------------------
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Qml QuickControls2 Concurrent)
 
 # ---------------------------------------------------------------------------
 # GDAL (installed via vcpkg)
@@ -53,10 +53,10 @@ find_package(libzip CONFIG REQUIRED)
 # set(QGIS_PREFIX_PATH "C:/OSGeo4W64" CACHE PATH "QGIS installation path")
 # list(APPEND CMAKE_PREFIX_PATH "${QGIS_PREFIX_PATH}")
 
-find_package(QGIS REQUIRED)
-if(NOT QGIS_FOUND)
-    message(FATAL_ERROR "QGIS no encontrado. Por favor instala QGIS e inicia QGIS_PREFIX_PATH.")
-endif()
+#find_package(QGIS REQUIRED)
+#if(NOT QGIS_FOUND)
+#    message(FATAL_ERROR "QGIS no encontrado. Por favor instala QGIS e inicia QGIS_PREFIX_PATH.")
+#endif()
 
 # ---------------------------------------------------------------------------
 # Executable + QML module
@@ -80,14 +80,7 @@ qt_add_qml_module(proyectos_mdm_movil
         qml/GpkgViewerDialog.qml
         qml/QgisGeneratorPanel.qml
        # qml/QgisViewerWindow.qml
-    SOURCES
-        src/main.cpp
-        src/qgisprojectgenerator.h
-        src/qgisprojectgenerator.cpp
-        src/geomanager.h
-        src/geomanager.cpp
-       # src/qgisprojectviewer.h
-       # src/qgisprojectviewer.h
+
 )
 
 # ---------------------------------------------------------------------------
@@ -95,7 +88,7 @@ qt_add_qml_module(proyectos_mdm_movil
 # ---------------------------------------------------------------------------
 target_include_directories(proyectos_mdm_movil PRIVATE
     src
-    ${QGIS_INCLUDE_DIR}
+#    ${QGIS_INCLUDE_DIR}
 )
 
 # ---------------------------------------------------------------------------
@@ -108,11 +101,11 @@ target_link_libraries(proyectos_mdm_movil PUBLIC
     Qt6::Qml
     Qt6::QuickControls2
     Qt6::Concurrent
-    Qt6::Widgets
+    #Qt6::Widgets
     GDAL::GDAL
     libzip::zip
-    ${QGIS_CORE_LIBRARY}
-    ${QGIS_GUI_LIBRARY}
+ #   ${QGIS_CORE_LIBRARY}
+#    ${QGIS_GUI_LIBRARY}
 )
 
 # ---------------------------------------------------------------------------

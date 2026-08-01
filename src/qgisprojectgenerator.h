@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <QObject>
 #include <QString>
@@ -37,10 +37,10 @@ public:
     /**
      * @brief Generate a .qgz project file from a GeoPackage.
      *
-     * NOTA: Esta operación es ahora ASINCRÓNICA (v0.2.0+).
-     * El método retorna inmediatamente; el resultado llega vía signal
+     * NOTA: Esta operaciï¿½n es ahora ASINCRï¿½NICA (v0.2.0+).
+     * El mï¿½todo retorna inmediatamente; el resultado llega vï¿½a signal
      * generationSucceeded() cuando termina, o lastError si falla.
-     * Usa la propiedad busy para indicar operación en progreso.
+     * Usa la propiedad busy para indicar operaciï¿½n en progreso.
      *
      * @param gpkgPath   Absolute path to the source GeoPackage file.
      * @param outputPath Absolute path for the output .qgz file (will be
