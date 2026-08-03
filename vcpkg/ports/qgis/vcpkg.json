@@ -1,7 +1,7 @@
 {
     "name": "qgis",
     "version": "3.40.4",
-    "port-version": 0,
+    "port-version": 1,
     "homepage": "https://qgis.org",
     "description": "QGIS is a free, open source, cross platform (lin/win/mac) geographical information system (GIS)",
     "dependencies": [
@@ -101,11 +101,14 @@
       },
       "qtkeychain-qt6",
       "qtlocation",
+      "qtmultimedia",
       "qtsvg",
       {
         "name": "qttools",
         "host": true
       },
+      "qscintilla",
+      "qwt",
       "zlib",
       {
         "name": "vcpkg-cmake",

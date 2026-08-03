@@ -41,6 +41,20 @@ Item {
         onAccepted: root.outputQgzPath = root.geoMgr.urlToPath(selectedFile.toString())
     }
 
+    FileDialog {
+        id: qgzOpenDialog
+        title: qsTr("Abrir proyecto QGIS (.qgz) para visualizar")
+        nameFilters: [qsTr("Proyecto QGIS (*.qgz *.qgs)")]
+        fileMode: FileDialog.OpenFile
+        onAccepted: {
+            const path = root.geoMgr.urlToPath(selectedFile.toString())
+            if (!QgisViewerLauncher.openProject(path)) {
+                resultLabel.color = Material.color(Material.Red)
+                resultLabel.text = qsTr("✗ Error al abrir el visor: ") + QgisViewerLauncher.lastError
+            }
+        }
+    }
+
     ColumnLayout {
         id: mainLayout
         x: 16
@@ -183,6 +197,16 @@ Item {
                     projectNameField.text.trim()
                 )
             }
+        }
+
+        // Botón para visualizar un proyecto .qgz existente
+        Button {
+            id: viewProjectBtn
+            text: qsTr("Ver proyecto QGIS…")
+            Layout.fillWidth: true
+            Layout.preferredHeight: 40
+            font.pixelSize: 14
+            onClicked: qgzOpenDialog.open()
         }
 
         // Panel de resultados

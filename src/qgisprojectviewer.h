@@ -1,14 +1,13 @@
 #pragma once
 
-//#include <QMainWindow>
+#include <QMainWindow>
 #include <QString>
-//#include <QTreeView>
-//#include <QDockWidget>
-//#include <QMenuBar>
-//#include <QMenu>
 #include <QAction>
-//#include <QVBoxLayout>
-//#include <QStatusBar>
+#include <QVBoxLayout>
+#include <QStatusBar>
+#include <QDockWidget>
+#include <QObject>
+#include <QtQml/qqmlregistration.h>
 
 // Forward declarations de QGIS
 class QgsProject;
@@ -104,4 +103,46 @@ private:
     // State
     QString m_lastError;
     QString m_currentProjectPath;
+};
+
+/**
+ * @brief QgisViewerLauncher es un puente QML -> Widgets que permite abrir
+ *        ventanas QgisProjectViewer (QMainWindow) desde código QML/QtQuick.
+ *
+ * QtQuick no puede instanciar QWidget directamente, por lo que este objeto
+ * se registra como singleton invocable en el módulo QML "App" y se encarga
+ * de crear, mantener y mostrar las ventanas del visor.
+ *
+ * Uso desde QML:
+ * @code
+ *   QgisViewerLauncher.openProject("/ruta/al/proyecto.qgz")
+ * @endcode
+ */
+class QgisViewerLauncher : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+    Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
+
+public:
+    explicit QgisViewerLauncher(QObject *parent = nullptr);
+
+    QString lastError() const;
+
+    /**
+     * @brief Abre una nueva ventana visor cargando el proyecto indicado.
+     * @param projectPath Ruta absoluta al archivo .qgz/.qgs.
+     * @return true si la ventana se creó y el proyecto se cargó correctamente.
+     */
+    Q_INVOKABLE bool openProject(const QString &projectPath);
+
+signals:
+    void lastErrorChanged();
+
+private:
+    void setLastError(const QString &error);
+
+    QString m_lastError;
 };

@@ -1,9 +1,10 @@
 # GPLv2 Licence
 find_path(QGIS_INCLUDE_DIR qgis.h PATH_SUFFIXES qgis)
 find_library(QGIS_CORE_LIBRARY NAMES qgis_core)
+find_library(QGIS_GUI_LIBRARY  NAMES qgis_gui)
 find_path(QGIS_RESOURCE_DIR qgis.db PATH_SUFFIXES share/qgis/resources)
 
-set(QGIS_REQUIRED_VARS QGIS_CORE_LIBRARY QGIS_INCLUDE_DIR QGIS_RESOURCE_DIR)
+set(QGIS_REQUIRED_VARS QGIS_CORE_LIBRARY QGIS_GUI_LIBRARY QGIS_INCLUDE_DIR QGIS_RESOURCE_DIR)
 set(QGIS_PROVIDERS_LIST
     authmethod_basic
     authmethod_esritoken
@@ -37,6 +38,12 @@ if (QGIS_FOUND AND NOT TARGET QGIS::Core)
                           INTERFACE_INCLUDE_DIRECTORIES "${QGIS_INCLUDE_DIR}"
   )
 
+  add_library(QGIS::Gui UNKNOWN IMPORTED)
+  set_target_properties(
+    QGIS::Gui PROPERTIES IMPORTED_LOCATION "${QGIS_GUI_LIBRARY}"
+                         INTERFACE_INCLUDE_DIRECTORIES "${QGIS_INCLUDE_DIR}"
+  )
+
   foreach (provider ${QGIS_PROVIDERS_LIST})
     add_library(QGIS::${provider} STATIC IMPORTED)
     set_target_properties(
@@ -46,7 +53,7 @@ if (QGIS_FOUND AND NOT TARGET QGIS::Core)
 
 endif ()
 
-mark_as_advanced(QGIS_INCLUDE_DIR QGIS_CORE_LIBRARY QGIS_RESOURCE_DIR)
+mark_as_advanced(QGIS_INCLUDE_DIR QGIS_CORE_LIBRARY QGIS_GUI_LIBRARY QGIS_RESOURCE_DIR)
 foreach (provider ${QGIS_PROVIDERS_LIST})
   mark_as_advanced(QGIS_${provider}_LIBRARY)
 endforeach ()

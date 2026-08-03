@@ -1,6 +1,6 @@
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDir>
-#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -10,6 +10,7 @@
 // Pull in the auto-generated registration code produced by qt_add_qml_module
 //#include "geomanager.h"
 //#include "qgisprojectgenerator.h"
+//#include "qgisprojectviewer.h"
 
 // ---------------------------------------------------------------------------
 // Automatically set GDAL/PROJ runtime environment variables if not already
@@ -43,8 +44,11 @@ static void setupGdalEnvironment()
 
 int main(int argc, char *argv[])
 {
-    // High-DPI rendering handled automatically by Qt 6
-    QGuiApplication app(argc, argv);
+    // High-DPI rendering handled automatically by Qt 6.
+    // QApplication (not QGuiApplication) is required because QgisProjectViewer
+    // is a native QMainWindow (QWidget-based) used to embed QgsMapCanvas /
+    // QgsLayerTreeView from the QGIS Gui API.
+    QApplication app(argc, argv);
 
     setupGdalEnvironment();
 
