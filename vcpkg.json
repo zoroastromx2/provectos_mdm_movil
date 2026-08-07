@@ -1,14 +1,5 @@
 {
 
-"vcpkg-configuration": {
-    "overlay-ports": [
-      "vcpkg/ports"
-    ],
-    "overlay-triplets": [
-      "vcpkg/triplets"
-    ]
-  },
-
 "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
 "name": "proyectos-mdm-movil",
 "version": "0.1.0",
@@ -43,12 +34,6 @@
     "name": "sqlite3",
     "default-features": false,
     "features": [ "rtree", "json1", "fts3" ]
-  },
-  "qgis",
-  {
-    "name": "qgis",
-    "host": true,
-    "default-features": false
   },
   "proj"
 ],

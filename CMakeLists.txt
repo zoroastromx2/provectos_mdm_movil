@@ -53,10 +53,10 @@ find_package(libzip CONFIG REQUIRED)
 # set(QGIS_PREFIX_PATH "C:/OSGeo4W64" CACHE PATH "QGIS installation path")
 # list(APPEND CMAKE_PREFIX_PATH "${QGIS_PREFIX_PATH}")
 
-find_package(QGIS REQUIRED)
-if(NOT QGIS_FOUND)
-    message(FATAL_ERROR "QGIS no encontrado. Por favor instala QGIS e inicia QGIS_PREFIX_PATH.")
-endif()
+#find_package(QGIS REQUIRED)
+#if(NOT QGIS_FOUND)
+#    message(FATAL_ERROR "QGIS no encontrado. Por favor instala QGIS e inicia QGIS_PREFIX_PATH.")
+#endif()
 
 # ---------------------------------------------------------------------------
 # Executable + QML module
@@ -84,10 +84,10 @@ qt_add_qml_module(proyectos_mdm_movil
 # ---------------------------------------------------------------------------
 # Include paths for our source + QGIS
 # ---------------------------------------------------------------------------
-target_include_directories(proyectos_mdm_movil PRIVATE
-    src
-    ${QGIS_INCLUDE_DIR}
-)
+#target_include_directories(proyectos_mdm_movil PRIVATE
+#    src
+#    ${QGIS_INCLUDE_DIR}
+#)
 
 # ---------------------------------------------------------------------------
 # Link libraries
@@ -110,84 +110,9 @@ target_link_libraries(proyectos_mdm_movil PUBLIC
     Qt6::QuickWidgets
     GDAL::GDAL
     libzip::zip
-    QGIS::Core
-    QGIS::Gui
-    ${QGIS_INCLUDE_DIR}/../../lib/qgis_native.lib
-    # --- Dependencias transitivas de qgis_core/qgis_gui (bibliotecas est치ticas) ---
-    ${QGIS_INCLUDE_DIR}/../../lib/proj.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/geos.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/geos_c.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/sqlite3.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/spatialite.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/spatialindex-64.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/spatialindex_c-64.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/exiv2.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/qca.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/qt6keychain.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/qscintilla2_qt6.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/qwt.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/libprotobuf.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/utf8_range.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/utf8_validity.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/zstd.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/minizip.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/libexpat.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/zlib.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_wms_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_wms_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_wcs_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_wcs_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_wfs_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_wfs_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_delimitedtext_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_delimitedtext_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_spatialite_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_spatialite_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_virtuallayer_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_virtuallayer_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_arcgisfeatureserver_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_arcgisfeatureserver_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_arcgismapserver_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_postgres_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_postgres_gui_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/provider_postgresraster_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_basic_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_esritoken_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_identcert_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_oauth2_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_pkcs12_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_pkipaths_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_apiheader_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_awss3_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/authmethod_maptilerhmacsha256_a.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/kmlbase.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/kmlconvenience.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/kmldom.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/kmlengine.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/kmlregionator.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/kmlxsd.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/poly2tri.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/Qt6SvgWidgets.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/libpq.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/abseil_dll.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_log_internal_structured_proto.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_log_flags.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_config.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_internal.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_marshalling.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_parse.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_private_handle_accessor.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_program_name.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_reflection.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_usage.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_usage_internal.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_commandlineflag.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_flags_commandlineflag_internal.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_poison.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_tracing_internal.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_decode_rust_punycode.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_demangle_rust.lib
-    ${QGIS_INCLUDE_DIR}/../../lib/absl_utf8_for_code_point.lib
+    #QGIS::Core
+    #QGIS::Gui
+
 )
 
 # ---------------------------------------------------------------------------
